@@ -136,7 +136,7 @@ def _enqueue_output(
                 output_queue.put((stream_name, line_str))
             except Exception as decode_err:
                 logger.warning(
-                    f"{log_prefix} Decode error: {decode_err}. Raw data (first 100 bytes): {line_bytes[:100]}"
+                    f"{log_prefix} 解码错误: {decode_err}。 原始数据（前100个字节）: {line_bytes[:100]}"
                 )
                 output_queue.put(
                     (
@@ -145,10 +145,10 @@ def _enqueue_output(
                     )
                 )
     except ValueError:
-        logger.debug(f"{log_prefix} ValueError (Stream might be closed).")
+        logger.debug(f"{log_prefix} 值错误 (数据流可能已关闭)。")
     except Exception as e:
         logger.error(
-            f"{log_prefix} Unexpected error reading stream: {e}", exc_info=True
+            f"{log_prefix} 读取流时发生意外错误: {e}", exc_info=True
         )
     finally:
         output_queue.put((stream_name, None))
@@ -157,7 +157,7 @@ def _enqueue_output(
                 stream.close()
             except Exception:
                 pass
-        logger.debug(f"{log_prefix} Thread exiting.")
+        logger.debug(f"{log_prefix} 线程正在退出。")
 
 
 # --- Setup launcher logging system (setup_launcher_logging) (from dev - clears log on start) ---
@@ -191,20 +191,20 @@ def setup_launcher_logging(log_level=logging.INFO):
     stream_handler.setFormatter(console_log_formatter)
     logger.addHandler(stream_handler)
     logger.info("=" * 30 + " Camoufox Launcher Logging Initialized " + "=" * 30)
-    logger.info(f"Log level set to: {logging.getLevelName(logger.getEffectiveLevel())}")
-    logger.info(f"Log file path: {LAUNCHER_LOG_FILE_PATH}")
+    logger.info(f"日志级别设置为: {logging.getLevelName(logger.getEffectiveLevel())}")
+    logger.info(f"日志文件路径: {LAUNCHER_LOG_FILE_PATH}")
 
 
 # --- Ensure auth directories exist (ensure_auth_dirs_exist) ---
 def ensure_auth_dirs_exist():
-    logger.info("Checking and ensuring auth directories exist...")
+    logger.info("检查并确保认证目录存在...")
     try:
         os.makedirs(ACTIVE_AUTH_DIR, exist_ok=True)
-        logger.info(f"  ✓ Active auth directory ready: {ACTIVE_AUTH_DIR}")
+        logger.info(f"  ✓ 活动认证目录就绪: {ACTIVE_AUTH_DIR}")
         os.makedirs(SAVED_AUTH_DIR, exist_ok=True)
-        logger.info(f"  ✓ Saved auth directory ready: {SAVED_AUTH_DIR}")
+        logger.info(f"  ✓ 已保存认证目录就绪: {SAVED_AUTH_DIR}")
         os.makedirs(EMERGENCY_AUTH_DIR, exist_ok=True)
-        logger.info(f"  ✓ Emergency auth directory ready: {EMERGENCY_AUTH_DIR}")
+        logger.info(f"  ✓ 紧急认证目录就绪: {EMERGENCY_AUTH_DIR}")
     except Exception as e:
         logger.error(f"  ❌ Failed to create auth directories: {e}", exc_info=True)
         sys.exit(1)
@@ -213,10 +213,10 @@ def ensure_auth_dirs_exist():
 # --- Cleanup function (executed on exit) (from dev - more detailed logging and checks) ---
 def cleanup():
     global camoufox_proc
-    logger.info("--- Starting cleanup routine (launch_camoufox.py) ---")
+    logger.info("--- 开始清理程序 (launch_camoufox.py) ---")
     if camoufox_proc and camoufox_proc.poll() is None:
         pid = camoufox_proc.pid
-        logger.info(f"Terminating Camoufox internal subprocess (PID: {pid})...")
+        logger.info(f"正在终止 Camoufox 内部子进程 (PID: {pid})...")
         try:
             if (
                 sys.platform != "win32"
@@ -226,18 +226,18 @@ def cleanup():
                 try:
                     pgid = os.getpgid(pid)
                     logger.info(
-                        f"  Sending SIGTERM to Camoufox process group (PGID: {pgid})..."
+                        f"  正在发送 SIGTERM 给 Camoufox 进程组 (PGID: {pgid})..."
                     )
                     os.killpg(pgid, signal.SIGTERM)
                 except ProcessLookupError:
                     logger.info(
-                        f"  Camoufox process group (PID: {pid}) not found, attempting direct termination..."
+                        f"  未找到 Camoufox 进程组 (PID: {pid})，尝试直接终止..."
                     )
                     camoufox_proc.terminate()
             else:
                 if sys.platform == "win32":
                     logger.info(
-                        f"🔥 [ID-02] Windows Force-Kill Strategy: Using immediate /F /T for process tree (PID: {pid})"
+                        f"🔥 [ID-02] Windows 强制结束策略: 立即使用 /F /T 结束进程树 (PID: {pid})"
                     )
                     # [ID-02] Enhanced Windows Force-Kill: Immediate /F /T without grace period
                     result = subprocess.run(
@@ -248,24 +248,24 @@ def cleanup():
                     )
                     if result.returncode == 0:
                         logger.info(
-                            "  ✅ Successfully force-killed Camoufox process tree via taskkill."
+                            "  ✅ 成功通过 taskkill 强制终止 Camoufox 进程树。"
                         )
                     else:
                         logger.warning(
-                            f"  ⚠️ Taskkill /F /T returned code {result.returncode}: {result.stderr.strip()}"
+                            f"  ⚠️ Taskkill /F /T 返回代码 {result.returncode}: {result.stderr.strip()}"
                         )
                         # Fallback: try regular terminate
                         camoufox_proc.terminate()
                 else:
-                    logger.info(f"  Sending SIGTERM to Camoufox (PID: {pid})...")
+                    logger.info(f"  正在向 Camoufox 发送 SIGTERM (PID: {pid})...")
                     camoufox_proc.terminate()
             camoufox_proc.wait(timeout=5)
             logger.info(
-                f"  ✓ Camoufox (PID: {pid}) successfully terminated via SIGTERM."
+                f"  ✓ Camoufox (PID: {pid}) 已成功通过 SIGTERM 终止。"
             )
         except subprocess.TimeoutExpired:
             logger.warning(
-                f"  ⚠️ Camoufox (PID: {pid}) SIGTERM timed out. Sending SIGKILL to force terminate..."
+                f"  ⚠️ Camoufox (PID: {pid}) SIGTERM 超时。发送 SIGKILL 强制终止..."
             )
             if (
                 sys.platform != "win32"
@@ -275,18 +275,18 @@ def cleanup():
                 try:
                     pgid = os.getpgid(pid)
                     logger.info(
-                        f"  Sending SIGKILL to Camoufox process group (PGID: {pgid})..."
+                        f"  正在发送 SIGKILL 给 Camoufox 进程组 (PGID: {pgid})..."
                     )
                     os.killpg(pgid, signal.SIGKILL)
                 except ProcessLookupError:
                     logger.info(
-                        f"  Camoufox process group (PID: {pid}) not found during SIGKILL, attempting direct force kill..."
+                        f"  在发送 SIGKILL 期间未找到 Camoufox 进程组 (PID: {pid})，尝试直接强制终结..."
                     )
                     camoufox_proc.kill()
             else:
                 if sys.platform == "win32":
                     logger.info(
-                        f"  🔥 [ID-02] Fallback: Force killing Camoufox process tree (PID: {pid})"
+                        f"  🔥 [ID-02] 回退方案: 强制终止 Camoufox 进程树 (PID: {pid})"
                     )
                     # [ID-02] Enhanced fallback force-kill with better error handling
                     result = subprocess.run(
@@ -297,26 +297,26 @@ def cleanup():
                     )
                     if result.returncode == 0:
                         logger.info(
-                            "  ✅ Fallback: Successfully force-killed Camoufox process tree."
+                            "  ✅ 回退方案: 成功强制终止 Camoufox 进程树。"
                         )
                     else:
                         logger.warning(
-                            f"  ⚠️ Fallback taskkill failed (code {result.returncode}): {result.stderr.strip()}"
+                            f"  ⚠️ 回退方案 taskkill 失败 (代码 {result.returncode}): {result.stderr.strip()}"
                         )
                 else:
                     camoufox_proc.kill()
             try:
                 camoufox_proc.wait(timeout=2)
                 logger.info(
-                    f"  ✓ Camoufox (PID: {pid}) successfully terminated via SIGKILL."
+                    f"  ✓ Camoufox (PID: {pid}) 已成功通过 SIGKILL 终止。"
                 )
             except Exception as e_kill:
                 logger.error(
-                    f"  ❌ Error waiting for Camoufox (PID: {pid}) SIGKILL completion: {e_kill}"
+                    f"  ❌ 等待 Camoufox (PID: {pid}) SIGKILL 完成时发生错误: {e_kill}"
                 )
         except Exception as e_term:
             logger.error(
-                f"  ❌ Error terminating Camoufox (PID: {pid}): {e_term}", exc_info=True
+                f"  ❌ 终止 Camoufox 时发生错误 (PID: {pid}): {e_term}", exc_info=True
             )
         finally:
             if (
@@ -334,12 +334,12 @@ def cleanup():
         camoufox_proc = None
     elif camoufox_proc:
         logger.info(
-            f"Camoufox internal subprocess (PID: {camoufox_proc.pid if hasattr(camoufox_proc, 'pid') else 'N/A'}) ended previously, exit code: {camoufox_proc.poll()}."
+            f"Camoufox 内部子进程 (PID: {camoufox_proc.pid if hasattr(camoufox_proc, 'pid') else 'N/A'}) 已在之前结束，退出代码: {camoufox_proc.poll()}。"
         )
         camoufox_proc = None
     else:
-        logger.info("Camoufox internal subprocess not running or already cleaned up.")
-    logger.info("--- Cleanup routine finished (launch_camoufox.py) ---")
+        logger.info("Camoufox 内部子进程未在运行或已被清理。")
+    logger.info("--- 清理程序已完成 (launch_camoufox.py) ---")
 
 
 atexit.register(cleanup)
@@ -349,18 +349,18 @@ def signal_handler(sig, frame):
     from config.global_state import GlobalState
 
     logger.info(
-        f"Received signal {signal.Signals(sig).name} ({sig}). Setting IS_SHUTTING_DOWN event..."
+        f"收到信号 {signal.Signals(sig).name} ({sig})。 正在设置 IS_SHUTTING_DOWN 事件..."
     )
     GlobalState.IS_SHUTTING_DOWN.set()
-    logger.info("Initiating exit procedure (Force Exit)...")
+    logger.info("启动退出程序 (强制退出)...")
 
     # [FIX-ZOMBIE] Run cleanup explicitly because os._exit skips atexit
     try:
         cleanup()
     except Exception as e:
-        logger.error(f"Error during cleanup in signal handler: {e}")
+        logger.error(f"信号处理器的清理程序发生错误: {e}")
 
-    logger.info("Exiting with os._exit(0)")
+    logger.info("退出 os._exit(0)")
     os._exit(0)
 
 
@@ -370,7 +370,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 # --- Check dependencies (check_dependencies) (from dev - more comprehensive) ---
 def check_dependencies():
-    logger.info("--- Step 1: Check Dependencies ---")
+    logger.info("--- 第一步: 检查依赖 ---")
     required_modules = {}
     if launch_server is not None and DefaultAddons is not None:
         required_modules["camoufox"] = "camoufox (for server and addons)"
@@ -382,11 +382,11 @@ def check_dependencies():
     missing_py_modules = []
     dependencies_ok = True
     if required_modules:
-        logger.info("Checking Python modules:")
+        logger.info("检查 Python 模块:")
         for module_name, install_package_name in required_modules.items():
             try:
                 __import__(module_name)
-                logger.info(f"  ✓ Module '{module_name}' found.")
+                logger.info(f"  ✓ 找到模块 \'{module_name}\'。")
             except ImportError:
                 logger.error(
                     f"  ❌ Module '{module_name}' (package: '{install_package_name}') not found."
@@ -410,17 +410,17 @@ def check_dependencies():
         from server import app as server_app_check
 
         if server_app_check:
-            logger.info("  ✓ Successfully imported 'app' object from 'server.py'.")
+            logger.info("  ✓ 成功从 'server.py' 导入 'app' 对象。")
     except ImportError as e_import_server:
         logger.error(
             f"  ❌ Failed to import 'app' object from 'server.py': {e_import_server}"
         )
-        logger.error("     Please ensure 'server.py' exists and has no import errors.")
+        logger.error("     请确保 'server.py' 存在并且没有导入错误。")
         dependencies_ok = False
 
     if not dependencies_ok:
         logger.error("-------------------------------------------------")
-        logger.error("❌ Dependency check failed!")
+        logger.error("❌ 依赖检查失败!")
         if missing_py_modules:
             logger.error(
                 f"   Missing Python libraries: {', '.join(missing_py_modules)}"
@@ -431,7 +431,7 @@ def check_dependencies():
         logger.error("-------------------------------------------------")
         sys.exit(1)
     else:
-        logger.info("✅ All launcher dependency checks passed.")
+        logger.info("✅ 所有启动器依赖检查通过。")
 
 
 # --- Port check and cleanup functions (from dev - more robust) ---
@@ -506,9 +506,9 @@ def find_pids_on_port(port: int) -> list[int]:
             )
     except FileNotFoundError:
         cmd_name = command.split()[0] if command else "Related tool"
-        logger.error(f"Command '{cmd_name}' not found.")
+        logger.error(f"找不到命令 \'{cmd_name}\'。")
     except subprocess.TimeoutExpired:
-        logger.error(f"Command '{command}' timed out.")
+        logger.error(f"命令 \'{command}\' 超时。")
     except Exception as e:
         logger.error(f"Error finding processes on port {port}: {e}", exc_info=True)
     return pids
@@ -517,7 +517,7 @@ def find_pids_on_port(port: int) -> list[int]:
 def kill_process_interactive(pid: int) -> bool:
     system_platform = platform.system()
     success = False
-    logger.info(f"  Attempting to terminate process PID: {pid}...")
+    logger.info(f"  尝试终止进程 PID: {pid}...")
     try:
         if system_platform == "Linux" or system_platform == "Darwin":
             result_term = subprocess.run(
@@ -529,11 +529,11 @@ def kill_process_interactive(pid: int) -> bool:
                 check=False,
             )
             if result_term.returncode == 0:
-                logger.info(f"    ✓ PID {pid} sent SIGTERM signal.")
+                logger.info(f"    ✓ 向 PID {pid} 发送了 SIGTERM 信号。")
                 success = True
             else:
                 logger.warning(
-                    f"    PID {pid} SIGTERM failed: {result_term.stderr.strip() or result_term.stdout.strip()}. Attempting SIGKILL..."
+                    f"    PID {pid} SIGTERM 失败: {result_term.stderr.strip() or result_term.stdout.strip()}。正在尝试 SIGKILL..."
                 )
                 result_kill = subprocess.run(
                     f"kill -9 {pid}",
@@ -544,11 +544,11 @@ def kill_process_interactive(pid: int) -> bool:
                     check=False,
                 )
                 if result_kill.returncode == 0:
-                    logger.info(f"    ✓ PID {pid} sent SIGKILL signal.")
+                    logger.info(f"    ✓ 向 PID {pid} 发送了 SIGKILL 信号。")
                     success = True
                 else:
                     logger.error(
-                        f"    ✗ PID {pid} SIGKILL failed: {result_kill.stderr.strip() or result_kill.stdout.strip()}."
+                        f"    ✗ PID {pid} SIGKILL 失败: {result_kill.stderr.strip() or result_kill.stdout.strip()}。"
                     )
         elif system_platform == "Windows":
             command_desc = f"taskkill /PID {pid} /T /F"
@@ -566,7 +566,7 @@ def kill_process_interactive(pid: int) -> bool:
             if result.returncode == 0 and (
                 "SUCCESS" in output.upper() or "成功" in output
             ):
-                logger.info(f"    ✓ PID {pid} terminated via taskkill /F.")
+                logger.info(f"    ✓ 进程 PID {pid} 已通过 taskkill /F 终止。")
                 success = True
             # Check for localized "Not Found" messages (e.g., "找不到" for Chinese systems)
             elif (
@@ -574,19 +574,19 @@ def kill_process_interactive(pid: int) -> bool:
                 or "找不到" in error_output
             ):  # Process might have exited itself
                 logger.info(
-                    f"    PID {pid} not found during taskkill (might have exited)."
+                    f"    在执行 taskkill 时未找到 PID {pid} (可能已退出)。"
                 )
                 success = True  # Considered success as target is port availability
             else:
                 logger.error(
-                    f"    ✗ PID {pid} taskkill /F failed: {(error_output + ' ' + output).strip()}."
+                    f"    ✗ PID {pid} 的 taskkill /F 操作失败: {(error_output + ' ' + output).strip()}。"
                 )
         else:
             logger.warning(
-                f"    Unsupported OS '{system_platform}' for process termination."
+                f"    不支持用于终止进程的 OS \'{system_platform}\'。"
             )
     except Exception as e:
-        logger.error(f"    Unexpected error terminating PID {pid}: {e}", exc_info=True)
+        logger.error(f"    终止 PID {pid} 时发生意外错误: {e}", exc_info=True)
     return success
 
 
@@ -922,10 +922,10 @@ if __name__ == "__main__":
     else:
         simulated_os_for_camoufox = "linux"  # Default fallback for unknown systems
         logger.warning(
-            f"Unrecognized system '{current_system_for_camoufox}'. Camoufox OS simulation defaulting to: {simulated_os_for_camoufox}"
+            f"未识别的系统 \'{current_system_for_camoufox}\'。Camoufox 操作系统模拟默认为: {simulated_os_for_camoufox}"
         )
     logger.info(
-        f"Based on system '{current_system_for_camoufox}', Camoufox OS simulation auto-set to: {simulated_os_for_camoufox}"
+        f"基于系统 \'{current_system_for_camoufox}\', Camoufox 操作系统模拟自动设置为: {simulated_os_for_camoufox}"
     )
 
     # --- Handle internal Camoufox launch logic (if script called as subprocess) (from dev) ---
@@ -1029,7 +1029,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # --- Main Launcher Logic ---
-    logger.info("🚀 Camoufox Launcher Started 🚀")
+    logger.info("🚀 Camoufox 启动器已启动 🚀")
     logger.info("=================================================")
     ensure_auth_dirs_exist()
     check_dependencies()
@@ -1066,10 +1066,10 @@ if __name__ == "__main__":
             default_mode_from_env = "virtual_headless"
             default_interactive_choice = "3" if platform.system() == "Linux" else "1"
 
-        logger.info("--- Select Launch Mode (not specified via args) ---")
+        logger.info("--- 选择启动模式 (未通过参数指定) ---")
         if env_launch_mode and default_mode_from_env:
             logger.info(
-                f"  Read default launch mode from .env: {env_launch_mode} -> {default_mode_from_env}"
+                f"  从 .env 读取默认启动模式: {env_launch_mode} -> {default_mode_from_env}"
             )
 
         prompt_options_text = "[1] Headless, [2] Debug"
@@ -1096,10 +1096,10 @@ if __name__ == "__main__":
                 default_mode_from_env or "headless"
             )  # Use .env default or fallback to headless
             logger.info(
-                f"Invalid input '{user_mode_choice}' or timeout, using default mode: {final_launch_mode} mode"
+                f"无效输入 \'{user_mode_choice}\' 或超时，使用默认模式: {final_launch_mode} 模式"
             )
     logger.info(
-        f"Final selected launch mode: {final_launch_mode.replace('_', ' ')} mode"
+        f"最终选择的启动模式: {final_launch_mode.replace('_', ' ')} 模式"
     )
     logger.info("-------------------------------------------------")
 
@@ -1152,28 +1152,28 @@ if __name__ == "__main__":
     if (
         final_launch_mode == "virtual_headless" and platform.system() == "Linux"
     ):  # from dev
-        logger.info("--- Check Xvfb (Virtual Display) Dependency ---")
+        logger.info("--- 检查 Xvfb (虚拟显示) 依赖 ---")
         if not shutil.which("Xvfb"):
             logger.error(
-                "  ❌ Xvfb not found. Virtual display mode requires Xvfb. Please install (e.g., sudo apt-get install xvfb) and retry."
+                "  ❌ 找不到 Xvfb。虚拟显示模式需要 Xvfb。请安装 (例如: sudo apt-get install xvfb) 并重试。"
             )
             sys.exit(1)
-        logger.info("  ✓ Xvfb found.")
+        logger.info("  ✓ 找到 Xvfb。")
 
     server_target_port = args.server_port
     logger.info(
-        f"--- Step 2: Check if FastAPI server target port ({server_target_port}) is in use ---"
+        f"--- 第二步: 检查 FastAPI 服务器目标端口 ({server_target_port}) 是否被占用 ---"
     )
     port_is_available = False
     uvicorn_bind_host = "0.0.0.0"  # from dev (was 127.0.0.1 in helper)
     if is_port_in_use(server_target_port, host=uvicorn_bind_host):
         logger.warning(
-            f"  ❌ Port {server_target_port} (host {uvicorn_bind_host}) currently in use."
+            f"  ❌ 端口 {server_target_port} (主机 {uvicorn_bind_host}) 目前被占用。"
         )
         pids_on_port = find_pids_on_port(server_target_port)
         if pids_on_port:
             logger.warning(
-                f"     Identified PIDs potentially using port {server_target_port}: {pids_on_port}"
+                f"     识别到可能占用端口 {server_target_port} 的 PID: {pids_on_port}"
             )
             if final_launch_mode == "debug":
                 sys.stderr.flush()
@@ -1187,50 +1187,50 @@ if __name__ == "__main__":
                     .lower()
                 )
                 if choice == "y":
-                    logger.info("     User selected to attempt termination...")
+                    logger.info("     用户选择尝试终止...")
                     all_killed = all(
                         kill_process_interactive(pid) for pid in pids_on_port
                     )
                     time.sleep(2)
                     if not is_port_in_use(server_target_port, host=uvicorn_bind_host):
                         logger.info(
-                            f"     ✅ Port {server_target_port} (host {uvicorn_bind_host}) is now available."
+                            f"     ✅ 端口 {server_target_port} (主机 {uvicorn_bind_host}) 现已可用。"
                         )
                         port_is_available = True
                     else:
                         logger.error(
-                            f"     ❌ Port {server_target_port} (host {uvicorn_bind_host}) still in use after termination attempt."
+                            f"     ❌ 终止尝试后端口 {server_target_port} (主机 {uvicorn_bind_host}) 仍在使用。"
                         )
                 else:
                     logger.info(
-                        "     User selected not to auto-terminate or timed out. Continuing server start attempt."
+                        "     用户未选择自动终止或已超时。继续尝试启动服务器。"
                     )
             else:
                 logger.error(
-                    "     Headless mode will not attempt auto-termination of port-hogging processes. Server start may fail."
+                    "     无头模式不会尝试自动终止占用端口的进程。服务器启动可能会失败。"
                 )
         else:
             logger.warning(
-                f"     Could not auto-identify processes using port {server_target_port}. Server start may fail."
+                f"     无法自动识别使用端口 {server_target_port} 的进程。服务器启动可能会失败。"
             )
 
         if not port_is_available:
             logger.warning(
-                f"--- Port {server_target_port} might still be in use. Continuing, server will handle binding. ---"
+                f"--- 端口 {server_target_port} 可能仍在被使用。继续，服务器将处理绑定。 ---"
             )
     else:
         logger.info(
-            f"  ✅ Port {server_target_port} (host {uvicorn_bind_host}) is currently available."
+            f"  ✅ 端口 {server_target_port} (主机 {uvicorn_bind_host}) 目前可用。"
         )
         port_is_available = True
 
-    logger.info("--- Step 3: Prepare and start Camoufox internal process ---")
+    logger.info("--- 第三步: 准备并启动 Camoufox 内部进程 ---")
     captured_ws_endpoint = None
     # effective_active_auth_json_path = None # from dev # Initialized early
 
     if args.active_auth_json:
         logger.info(
-            f"  Attempting to use path from --active-auth-json: '{args.active_auth_json}'"
+            f"  尝试使用 --active-auth-json 的路径: \'{args.active_auth_json}\'"
         )
         candidate_path = os.path.expanduser(args.active_auth_json)
 
@@ -1272,11 +1272,11 @@ if __name__ == "__main__":
 
         if effective_active_auth_json_path:
             logger.info(
-                f"  Using resolved auth file from --active-auth-json: {effective_active_auth_json_path}"
+                f"  使用来自 --active-auth-json 解析的认证文件: {effective_active_auth_json_path}"
             )
         else:
             logger.error(
-                f"❌ Specified auth file (--active-auth-json='{args.active_auth_json}') not found or not a file."
+                f"❌ 指定的认证文件 (--active-auth-json=\'{args.active_auth_json}\') 未找到或不是文件。"
             )
             sys.exit(1)
     else:
@@ -1284,12 +1284,12 @@ if __name__ == "__main__":
         if final_launch_mode == "debug":
             # For debug mode, scan dirs and prompt user, don't auto-use files
             logger.info(
-                "  Debug Mode: Scanning directories to prompt user selection from available auth files..."
+                "  调试模式: 扫描目录以提示用户从可用的认证文件中选择..."
             )
         else:
             # For headless mode, check default auth file in active/ dir
             logger.info(
-                f"  --active-auth-json not provided. Checking default auth file in '{ACTIVE_AUTH_DIR}'..."
+                f"  未提供 --active-auth-json。在 \'{ACTIVE_AUTH_DIR}\' 中检查默认认证文件..."
             )
             try:
                 if os.path.exists(ACTIVE_AUTH_DIR):
@@ -1306,27 +1306,27 @@ if __name__ == "__main__":
                             ACTIVE_AUTH_DIR, active_json_files[0]
                         )
                         logger.info(
-                            f"  Using first alphabetic JSON file in '{ACTIVE_AUTH_DIR}': {os.path.basename(effective_active_auth_json_path)}"
+                            f"  使用 \'{ACTIVE_AUTH_DIR}\' 中第一个按字母顺序排列的 JSON 文件: {os.path.basename(effective_active_auth_json_path)}"
                         )
                     else:
                         logger.info(
-                            f"  Directory '{ACTIVE_AUTH_DIR}' empty or contains no JSON files."
+                            f"  目录 \'{ACTIVE_AUTH_DIR}\' 为空或未包含 JSON 文件。"
                         )
                 else:
-                    logger.info(f"  Directory '{ACTIVE_AUTH_DIR}' does not exist.")
+                    logger.info(f"  目录 \'{ACTIVE_AUTH_DIR}\' 不存在。")
             except Exception as e_scan_active:
                 logger.warning(
-                    f"  Error scanning '{ACTIVE_AUTH_DIR}': {e_scan_active}",
+                    f"  扫描 \'{ACTIVE_AUTH_DIR}\' 时出错: {e_scan_active}",
                     exc_info=True,
                 )
 
         # Handle debug mode user selection logic
-        if final_launch_mode == "debug" and not args.auto_save_auth:
+        if final_launch_mode == "debug" and not args.auto_save_auth and not args.active_auth_json:
             # For debug mode, scan all directories and prompt user
             available_profiles = []
             # Scan ACTIVE_AUTH_DIR first, then SAVED_AUTH_DIR
             logger.info(
-                "[DIAGNOSTIC] Scanning for profiles in: active, saved, emergency."
+                "[诊断] 正在扫描 active, saved, emergency 中的配置文件。"
             )
             for profile_dir_path_str, dir_label in [
                 (ACTIVE_AUTH_DIR, "active"),
@@ -1353,7 +1353,7 @@ if __name__ == "__main__":
                             )
                     except OSError as e:
                         logger.warning(
-                            f"   ⚠️ Warning: Cannot read directory '{profile_dir_path_str}': {e}"
+                            f"   ⚠️ 警告: 无法读取目录 \'{profile_dir_path_str}\': {e}"
                         )
 
             if available_profiles:
@@ -1381,7 +1381,7 @@ if __name__ == "__main__":
                             selected_profile = available_profiles[choice_index]
                             effective_active_auth_json_path = selected_profile["path"]
                             logger.info(
-                                f"   Selected to load auth file: {selected_profile['name']}"
+                                f"   选择加载认证文件: {selected_profile['name']}"
                             )
                             print(
                                 f"   Selected loading: {selected_profile['name']}",
@@ -1389,23 +1389,23 @@ if __name__ == "__main__":
                             )
                         else:
                             logger.info(
-                                "   Invalid selection number or timeout. Will not load auth file."
+                                "   选择编号无效或超时。将不会加载认证文件。"
                             )
                             print(
-                                "   Invalid selection number or timeout. Will not load auth file.",
+                                "   选择编号无效或超时。将不会加载认证文件。",
                                 flush=True,
                             )
                     except ValueError:
-                        logger.info("   Invalid input. Will not load auth file.")
-                        print("   Invalid input. Will not load auth file.", flush=True)
+                        logger.info("   无效输入。将不会加载认证文件。")
+                        print("   无效输入。将不会加载认证文件。", flush=True)
                 else:
-                    logger.info("   Okay, no auth file loaded or timeout.")
-                    print("   Okay, no auth file loaded or timeout.", flush=True)
+                    logger.info("   好的，未加载认证文件或已超时。")
+                    print("   好的，未加载认证文件或已超时。", flush=True)
                 print("-" * 60, flush=True)
             else:
-                logger.info("   No auth files found. Using browser current state.")
+                logger.info("   未找到认证文件。使用浏览器当前状态。")
                 print(
-                    "   No auth files found. Using browser current state.", flush=True
+                    "   未找到认证文件。使用浏览器当前状态。", flush=True
                 )
         elif not effective_active_auth_json_path and not args.auto_save_auth:
             # Check for backup profiles in saved or emergency before failing, BUT ONLY if auto-rotation is enabled.
@@ -1415,10 +1415,10 @@ if __name__ == "__main__":
 
             if not auto_rotation_enabled:
                 logger.error(
-                    f"  ❌ {final_launch_mode} Mode Error: No active profile found in '{ACTIVE_AUTH_DIR}' and AUTO_AUTH_ROTATION_ON_STARTUP is disabled."
+                    f"  ❌ {final_launch_mode} 模式错误: 在 \'{ACTIVE_AUTH_DIR}\' 中未找到活动配置文件，且 AUTO_AUTH_ROTATION_ON_STARTUP 已禁用。"
                 )
                 logger.error(
-                    f"     Please ensure a profile exists in '{ACTIVE_AUTH_DIR}' or enable auto-rotation."
+                    f"     请确保在 \'{ACTIVE_AUTH_DIR}\' 中存在配置文件，或启用自动轮换。"
                 )
                 sys.exit(1)
 
@@ -1437,12 +1437,12 @@ if __name__ == "__main__":
 
             if has_backups:
                 logger.info(
-                    "  ⚠️ No active profile selected, but profiles exist in saved/emergency and auto-rotation is enabled. Allowing startup (runtime rotation will select one)."
+                    "  ⚠️ 未选择活动配置文件，但 saved/emergency 中存在配置且已启用自动轮换。允许启动 (运行时转轮将进行选择)。"
                 )
             else:
                 # For headless mode, error if --active-auth-json not provided and active/ is empty AND no backups
                 logger.error(
-                    f"  ❌ {final_launch_mode} Mode Error: --active-auth-json not provided, active/ is empty, and no backup profiles found in saved/emergency."
+                    f"  ❌ {final_launch_mode} 模式错误: 未提供 --active-auth-json，active/为空，并且在 saved/emergency 中未找到备用配置文件。"
                 )
                 sys.exit(1)
 
@@ -1487,13 +1487,13 @@ if __name__ == "__main__":
 
     try:
         logger.info(
-            f"  Executing Camoufox internal launch command: {' '.join(camoufox_internal_cmd_args)}"
+            f"  执行 Camoufox 内部启动命令: {' '.join(camoufox_internal_cmd_args)}"
         )
         camoufox_proc = subprocess.Popen(
             camoufox_internal_cmd_args, **camoufox_popen_kwargs
         )
         logger.info(
-            f"  Camoufox internal process started (PID: {camoufox_proc.pid}). Waiting for WebSocket endpoint output (max {ENDPOINT_CAPTURE_TIMEOUT}s)..."
+            f"  Camoufox 内部进程已启动 (PID: {camoufox_proc.pid})。等待 WebSocket 端点输出 (最大 {ENDPOINT_CAPTURE_TIMEOUT}秒)..."
         )
 
         camoufox_output_q = queue.Queue()
@@ -1515,7 +1515,7 @@ if __name__ == "__main__":
         while time.time() - ws_capture_start_time < ENDPOINT_CAPTURE_TIMEOUT:
             if camoufox_proc.poll() is not None:
                 logger.error(
-                    f"  Camoufox internal process (PID: {camoufox_proc.pid}) exited unexpectedly while waiting for WebSocket endpoint, exit code: {camoufox_proc.poll()}."
+                    f"  等待 WebSocket 端点时 Camoufox 内部进程 (PID: {camoufox_proc.pid}) 意外退出，退出代码: {camoufox_proc.poll()}。"
                 )
                 break
             try:
@@ -1523,11 +1523,11 @@ if __name__ == "__main__":
                 if line_from_camoufox is None:
                     camoufox_ended_streams_count += 1
                     logger.debug(
-                        f"  [InternalCamoufox-{stream_name}-PID:{camoufox_proc.pid}] Output stream closed (EOF)."
+                        f"  [InternalCamoufox-{stream_name}-PID:{camoufox_proc.pid}] 输出流已关闭 (EOF)。"
                     )
                     if camoufox_ended_streams_count >= 2:
                         logger.info(
-                            f"  All output streams of Camoufox internal process (PID: {camoufox_proc.pid}) closed."
+                            f"  Camoufox 内部进程 (PID: {camoufox_proc.pid}) 的所有输出流已关闭。"
                         )
                         break
                     continue
@@ -1546,7 +1546,7 @@ if __name__ == "__main__":
                 if ws_match:
                     captured_ws_endpoint = ws_match.group(1)
                     logger.info(
-                        f"  ✅ Successfully captured WebSocket endpoint from Camoufox internal process: {captured_ws_endpoint[:40]}..."
+                        f"  ✅ 成功捕获来自 Camoufox 内部进程的 WebSocket 端点: {captured_ws_endpoint[:40]}..."
                     )
                     break
             except queue.Empty:
@@ -1561,10 +1561,10 @@ if __name__ == "__main__":
             camoufox_proc and camoufox_proc.poll() is None
         ):
             logger.error(
-                f"  ❌ Failed to capture WebSocket endpoint from Camoufox internal process (PID: {camoufox_proc.pid}) within {ENDPOINT_CAPTURE_TIMEOUT} seconds."
+                f"  ❌ 无法在 {ENDPOINT_CAPTURE_TIMEOUT} 秒内从 Camoufox 内部进程 (PID: {camoufox_proc.pid}) 捕获 WebSocket 端点。"
             )
             logger.error(
-                "  Camoufox internal process still running but didn't output expected WebSocket endpoint. Check its logs."
+                "  Camoufox 内部进程仍在运行，但未输出预期的 WebSocket 端点。请检查其日志。"
             )
             cleanup()
             sys.exit(1)
@@ -1572,16 +1572,16 @@ if __name__ == "__main__":
             camoufox_proc and camoufox_proc.poll() is not None
         ):
             logger.error(
-                "  ❌ Camoufox internal process exited, and failed to capture WebSocket endpoint."
+                "  ❌ Camoufox 内部进程已退出，且未能捕获 WebSocket 端点。"
             )
             sys.exit(1)
         elif not captured_ws_endpoint:
-            logger.error("  ❌ Failed to capture WebSocket endpoint.")
+            logger.error("  ❌ 无法捕获 WebSocket 端点。")
             sys.exit(1)
 
     except Exception as e_launch_camoufox_internal:
         logger.critical(
-            f"  ❌ Fatal error launching internal Camoufox or capturing WebSocket endpoint: {e_launch_camoufox_internal}",
+            f"  ❌ 启动内部 Camoufox 或捕获 WebSocket 端点时发生严重错误: {e_launch_camoufox_internal}",
             exc_info=True,
         )
         cleanup()
@@ -1591,12 +1591,12 @@ if __name__ == "__main__":
     if (
         args.helper
     ):  # If args.helper is not empty (helper enabled by default or user specified)
-        logger.info(f"  Helper mode enabled, endpoint: {args.helper}")
+        logger.info(f"  助手模式已启用，端点: {args.helper}")
         os.environ["HELPER_ENDPOINT"] = args.helper  # Set endpoint env var
 
         if effective_active_auth_json_path:
             logger.info(
-                f"    Attempting to extract SAPISID from auth file '{os.path.basename(effective_active_auth_json_path)}'..."
+                f"    尝试从认证文件 \'{os.path.basename(effective_active_auth_json_path)}\' 提取 SAPISID..."
             )
             sapisid = ""
             try:
@@ -1706,7 +1706,7 @@ if __name__ == "__main__":
     proxy_config = determine_proxy_configuration(args.internal_camoufox_proxy)
     if proxy_config["stream_proxy"]:
         os.environ["UNIFIED_PROXY_CONFIG"] = proxy_config["stream_proxy"]
-        logger.info(f"  Setting unified proxy config: {proxy_config['source']}")
+        logger.info(f"  设置统一代理配置: {proxy_config['source']}")
     elif "UNIFIED_PROXY_CONFIG" in os.environ:
         del os.environ["UNIFIED_PROXY_CONFIG"]
 
@@ -1723,7 +1723,7 @@ if __name__ == "__main__":
     elif "HOST_OS_FOR_SHORTCUT" in os.environ:
         del os.environ["HOST_OS_FOR_SHORTCUT"]
 
-    logger.info("  Environment variables set for server.app:")
+    logger.info("  为 server.app 设置了的环境变量:")
     env_keys_to_log = [
         "CAMOUFOX_WS_ENDPOINT",
         "LAUNCH_MODE",
@@ -1751,12 +1751,39 @@ if __name__ == "__main__":
                 val_to_log = os.path.basename(val_to_log)
             logger.info(f"    {key}={val_to_log}")
         else:
-            logger.info(f"    {key}= (Not Set)")
+            logger.info(f"    {key}= (未设置)")
 
     # --- Step 5: Start FastAPI/Uvicorn server (from dev) ---
     logger.info(
         f"--- Step 5: Start Integrated FastAPI Server (Listening on: {args.server_port}) ---"
     )
+
+    def _clean_listening_port(port: int):
+        import subprocess
+        import platform
+        logger.info(f"  检查并释放端口 {port}...")
+        try:
+            if platform.system() == "Windows":
+                result = subprocess.run(["netstat", "-aon"], capture_output=True, text=True)
+                for line in result.stdout.splitlines():
+                    if f":{port}" in line and "LISTENING" in line:
+                        parts = line.strip().split()
+                        if parts:
+                            pid = parts[-1]
+                            subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+                            logger.info(f"  -> 已终止占用端口 {port} 的进程 PID: {pid}")
+            else:
+                result = subprocess.run(["lsof", "-t", "-i", f":{port}"], capture_output=True, text=True)
+                pids = result.stdout.strip().split()
+                for pid in pids:
+                    if pid:
+                        subprocess.run(["kill", "-9", pid], capture_output=True)
+                        logger.info(f"  -> 已终止占用端口 {port} 的进程 PID: {pid}")
+        except Exception as e:
+            logger.warning(f"  清理端口 {port} 失败: {e}")
+
+    _clean_listening_port(args.server_port)
+    _clean_listening_port(args.stream_port)
 
     if not args.exit_on_auth_save:
         try:
@@ -1910,4 +1937,4 @@ if __name__ == "__main__":
             if watcher_thread.is_alive():
                 watcher_thread.join()
 
-    logger.info("🚀 Camoufox Launcher Main Logic Finished 🚀")
+    logger.info("🚀 Camoufox 启动器主逻辑完成 🚀")

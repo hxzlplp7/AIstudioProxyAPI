@@ -167,7 +167,7 @@ class HttpInterceptor:
 
             # Convert buffer to bytes for pattern matching
             buffer_bytes = self.response_buffer.encode("utf-8")
-            matches = list(re.finditer(pattern, buffer_bytes))
+            matches = list(re.finditer(pattern, buffer_bytes, flags=re.DOTALL))
 
             # Debug: Log match count when processing is done
             if is_done and matches and FUNCTION_CALLING_DEBUG:

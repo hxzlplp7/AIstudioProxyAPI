@@ -1,0 +1,18 @@
+# OpenCode Configuration for AI Studio Proxy API
+
+version: "1"
+
+agents:
+  - name: aistudio
+    description: AI Studio Proxy API assistant
+    instructions: |
+      This is an AI Studio Proxy API project.
+      
+      Key commands:
+      - Start server: `poetry run python launch_camoufox.py --headless`
+      - Health check: `curl http://127.0.0.1:2048/health`
+      - Models: `curl http://127.0.0.1:2048/v1/models`
+      - Chat: `curl -X POST http://127.0.0.1:2048/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"gemini-2.0-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}]}"`
+      
+      Ports: API 2048, Stream 3120
+      Auth: auth_profiles/active/auth_auto_1772950763.json

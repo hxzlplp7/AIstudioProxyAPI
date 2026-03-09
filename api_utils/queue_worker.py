@@ -48,7 +48,7 @@ async def queue_worker() -> None:
     )
     from .utils_ext.stream import clear_stream_queue
 
-    logger.info("--- Queue Worker Started ---")
+    logger.info("--- 队列工作线程已启动 ---")
 
     # Validate that required globals are initialized
     if request_queue is None:
@@ -89,7 +89,7 @@ async def queue_worker() -> None:
         try:
             # [SHUTDOWN] Check shutdown signal
             if GlobalState.IS_SHUTTING_DOWN.is_set():
-                logger.info("🚨 Queue Worker detected shutdown signal, exiting.")
+                logger.info("🚨 队列工作线程检测到关闭信号，正在退出。")
                 break
 
             # Clean up disconnected requests in queue
@@ -149,7 +149,7 @@ async def queue_worker() -> None:
                     if GlobalState.IS_QUOTA_EXCEEDED
                     else "Graceful Rotation Pending"
                 )
-                logger.info(f"⏸️ Pausing worker for Auth Rotation ({reason})...")
+                logger.info(f"⏸️ 正在为认证轮换暂停工作线程 ({reason})...")
                 GlobalState.start_recovery()
                 try:
                     current_model_id = state.current_ai_studio_model_id
@@ -158,9 +158,9 @@ async def queue_worker() -> None:
                     )
                     if rotation_success:
                         GlobalState.NEEDS_ROTATION = False
-                        logger.info("✅ Auth rotation completed successfully.")
+                        logger.info("✅ 认证轮换成功完成。")
                     else:
-                        logger.error("❌ Auth rotation failed.")
+                        logger.error("❌ 认证轮换失败。")
                         await asyncio.sleep(1)
                 finally:
                     GlobalState.finish_recovery()
@@ -192,10 +192,10 @@ async def queue_worker() -> None:
             result_future = request_item["result_future"]
 
             GlobalState.CURRENT_STREAM_REQ_ID = req_id
-            logger.info(f"[{req_id}] (Worker) Processing request dequeued.")
+            logger.info(f"[{req_id}] (工作线程) 请求已出队，正在处理。")
 
             if GlobalState.IS_QUOTA_EXCEEDED:
-                logger.warning(f"[{req_id}] (Worker) ⛔ Quota exceeded, re-queueing.")
+                logger.warning(f"[{req_id}] (工作线程) ⛔ 配额超限，重新入队。")
                 await request_queue.put(request_item)
                 request_queue.task_done()
                 continue
@@ -232,7 +232,7 @@ async def queue_worker() -> None:
 
             # Wait for lock
             async with processing_lock:
-                logger.info(f"[{req_id}] (Worker) Lock acquired.")
+                logger.info(f"[{req_id}] (工作线程) 已获取锁。")
 
                 if not await _test_client_connection(req_id, http_request):
                     if result_future and not result_future.done():
@@ -464,4 +464,4 @@ async def queue_worker() -> None:
             if request_item:
                 request_queue.task_done()
 
-    logger.info("--- Queue Worker Stopped ---")
+    logger.info("--- 队列工作线程已停止 ---")

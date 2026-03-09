@@ -1,0 +1,9 @@
+{
+  "fastapi_port": 2048,
+  "stream_port": 3120,
+  "proxy_address": "",
+  "proxy_enabled": false,
+  "last_account": "auth_auto_1772950763",
+  "dark_mode": true,
+  "minimize_to_tray": true
+}

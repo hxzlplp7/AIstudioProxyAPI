@@ -17,7 +17,7 @@ async def analyze_model_requirements(
 
     if requested_model and requested_model != proxy_model_name:
         requested_model_id = requested_model.split("/")[-1]
-        logger.info(f"[{req_id}] Requesting model: {requested_model_id}")
+        logger.info(f"[{req_id}] 正在请求模型: {requested_model_id}")
 
         if parsed_model_list:
             valid_model_ids = [
@@ -35,7 +35,7 @@ async def analyze_model_requirements(
         if current_ai_studio_model_id != requested_model_id:
             context["needs_model_switching"] = True
             logger.info(
-                f"[{req_id}] Model switch needed: Current={current_ai_studio_model_id} -> Target={requested_model_id}"
+                f"[{req_id}] 需要切换模型: 当前={current_ai_studio_model_id} -> 目标={requested_model_id}"
             )
 
     return context
@@ -60,7 +60,7 @@ async def handle_model_switching(
     async with model_switching_lock:
         if state.current_ai_studio_model_id != model_id_to_use:
             logger.info(
-                f"[{req_id}] Preparing to switch model: {state.current_ai_studio_model_id} -> {model_id_to_use}"
+                f"[{req_id}] 正在准备切换模型: {state.current_ai_studio_model_id} -> {model_id_to_use}"
             )
             from browser_utils import switch_ai_studio_model
 
@@ -70,7 +70,7 @@ async def handle_model_switching(
                 context["model_actually_switched"] = True
                 context["current_ai_studio_model_id"] = model_id_to_use
                 logger.info(
-                    f"[{req_id}] ✅ Model switched successfully: {state.current_ai_studio_model_id}"
+                    f"[{req_id}] ✅ 模型切换成功: {state.current_ai_studio_model_id}"
                 )
             else:
                 # Current model ID should exist when switching fails
@@ -89,7 +89,7 @@ async def handle_model_switching(
 async def _handle_model_switch_failure(
     req_id: str, page: AsyncPage, model_id_to_use: str, model_before_switch: str, logger
 ) -> None:
-    logger.warning(f"[{req_id}] ❌ Failed to switch to model {model_id_to_use}.")
+    logger.warning(f"[{req_id}] ❌ 切换到模型 {model_id_to_use} 失败。")
     state.current_ai_studio_model_id = model_before_switch
     from .error_utils import http_error
 
@@ -114,7 +114,7 @@ async def handle_parameter_cache(req_id: str, context: RequestContext) -> None:
         if model_actually_switched or (
             current_ai_studio_model_id != cached_model_for_params
         ):
-            logger.info(f"[{req_id}] Model changed, parameter cache invalidated.")
+            logger.info(f"[{req_id}] 模型已更改，参数缓存失效。")
             page_params_cache.clear()
             page_params_cache["last_known_model_id_for_params"] = (
                 current_ai_studio_model_id

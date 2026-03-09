@@ -26,7 +26,7 @@ class AuthManager:
     async def get_available_profiles(self) -> List[str]:
         """List all .json files in the saved auth directory."""
         if not os.path.exists(SAVED_AUTH_DIR):
-            logger.warning(f"Saved auth directory not found: {SAVED_AUTH_DIR}")
+            logger.warning(f"未找到已保存的认证目录: {SAVED_AUTH_DIR}")
             return []
 
         loop = asyncio.get_running_loop()
@@ -58,14 +58,14 @@ class AuthManager:
         ]
 
         if not available:
-            msg = f"All authentication profiles exhausted. Failed: {len(self.failed_profiles)}, Total: {len(profiles)}"
+            msg = f"所有认证配置文件已耗尽。失败: {len(self.failed_profiles)}，总计: {len(profiles)}"
             logger.critical(msg)
             raise RuntimeError(msg)
 
         # Simple strategy: Pick the first available one.
         next_profile = available[0]
         self.current_profile = next_profile
-        logger.info(f"Switched to auth profile: {os.path.basename(next_profile)}")
+        logger.info(f"已切换到认证配置文件: {os.path.basename(next_profile)}")
         return next_profile
 
     def mark_profile_failed(self, profile_path: Optional[str] = None) -> None:
@@ -73,16 +73,16 @@ class AuthManager:
         target = profile_path or self.current_profile
         if target:
             self.failed_profiles.add(target)
-            logger.warning(f"Marked auth profile as failed: {os.path.basename(target)}")
+            logger.warning(f"已将认证配置文件标记为失败: {os.path.basename(target)}")
         else:
             logger.warning(
-                "Attempted to mark profile failed but no profile provided or active."
+                "尝试标记配置文件失败，但未提供或没有活动的配置文件。"
             )
 
     def reset_failures(self) -> None:
         """Reset the failure tracking."""
         self.failed_profiles.clear()
-        logger.info("Auth profile failure tracking reset.")
+        logger.info("认证配置文件失败跟踪已重置。")
 
 
 # Global instance

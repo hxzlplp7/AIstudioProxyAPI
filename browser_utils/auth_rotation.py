@@ -432,7 +432,7 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
 
     # [OBS-04] Explicit Rotation Logging with Visual Separators
     logger.info("♻️ =========================================")
-    logger.info("♻️ INITIATING AUTH ROTATION")
+    logger.info("♻️ 正在发起认证轮换")
     logger.info("♻️ =========================================")
 
     # Avoid re-entry if already rotating (Atomic Check & Wait)
@@ -447,7 +447,7 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
 
     # Atomically acquire the lock
     GlobalState.AUTH_ROTATION_LOCK.clear()
-    logger.info("🔒 Request processing locked.")
+    logger.info("🔒 请求处理已锁定。")
 
     should_release_lock = True
 
@@ -536,11 +536,11 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
         # Note: Nested try block removed, logic flattened into main try/finally
         while failed_attempts < max_retries:
             # 2. Select next profile
-            logger.info("🔍 Selecting next auth profile...")
+            logger.info("🔍 正在选择下一个认证配置文件...")
             next_profile_path = _get_next_profile(target_model_id)
 
             if not next_profile_path:
-                logger.warning("All profiles are on cooldown. Calculating wait time...")
+                logger.warning("所有配置文件都在冷却中。正在计算等待时间...")
 
                 now = time.time()
                 min_expiry = float("inf")
@@ -672,7 +672,7 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
             os.environ["ACTIVE_AUTH_JSON_PATH"] = next_profile_path
 
             # 3. Soft Context Swap
-            logger.info("🚀 Performing Soft Context Swap...")
+            logger.info("🚀 正在执行软上下文切换...")
             if not state.page_instance or state.page_instance.is_closed():
                 logger.error(
                     "❌ Page instance not found or closed, cannot perform soft swap."
@@ -696,7 +696,7 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
                 context = state.page_instance.context
                 await context.clear_cookies()
                 await context.add_cookies(storage_state.get("cookies", []))
-                logger.info("✅ Injected new cookies.")
+                logger.info("✅ 已注入新 Cookie。")
 
                 # 4. Perform Canary Test
                 if await _perform_canary_test(state.page_instance):
@@ -704,7 +704,7 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
                     GlobalState.reset_quota_status()
                     # GlobalState.current_profile_token_count = 0 # Removed: handled by reset_quota_status
                     logger.info(
-                        f"♻️ ROTATION SUCCESSFUL with profile: {new_profile_name}"
+                        f"♻️ 轮换成功 with profile: {new_profile_name}"
                     )
                     logger.info("♻️ =========================================")
                     return True
@@ -758,6 +758,6 @@ async def perform_auth_rotation(target_model_id: str = None) -> bool:
         # 5. Release lock (if not permanently locked)
         if should_release_lock:
             GlobalState.AUTH_ROTATION_LOCK.set()
-            logger.info("🔓 Request processing unlocked.")
+            logger.info("🔓 请求处理已解锁。")
             logger.info("♻️ Rotation flow completed")
             logger.info("♻️ =========================================")

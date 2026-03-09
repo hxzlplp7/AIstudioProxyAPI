@@ -68,7 +68,7 @@ class Launcher:  # pragma: no cover
         log_level_str = os.environ.get("SERVER_LOG_LEVEL", "INFO").upper()
         log_level = getattr(logging, log_level_str, logging.INFO)
         setup_launcher_logging(log_level=log_level)
-        logger.info("[System] Launcher started")
+        logger.info("[系统] 启动器已启动")
         ensure_auth_dirs_exist()
         check_dependencies(launch_server is not None, DefaultAddons is not None)
 
@@ -84,7 +84,7 @@ class Launcher:  # pragma: no cover
         self._check_xvfb()
         self._check_server_port()
 
-        logger.debug("[Init] Step 3: Preparing and starting Camoufox...")
+        logger.debug("[初始化] 第 3 步：正在准备并启动 Camoufox 浏览器...")
         self._resolve_auth_file_path()
 
         current_system_for_camoufox = platform.system()
@@ -106,7 +106,7 @@ class Launcher:  # pragma: no cover
             else "None"
         )
         logger.info(
-            f"[System] Configuration ready | Port: {self.args.server_port} | Mode: {mode_str} | Auth: {auth_name}"
+            f"[系统] 配置就绪 | 端口: {self.args.server_port} | 模式: {mode_str} | 认证文件: {auth_name}"
         )
 
         captured_ws_endpoint = self.camoufox_manager.start(
@@ -120,7 +120,7 @@ class Launcher:  # pragma: no cover
         self._setup_environment_variables(captured_ws_endpoint)
         self._start_server()
 
-        logger.info("Launcher main logic completed")
+        logger.info("启动器主逻辑执行完毕")
 
     def _determine_launch_mode(self):
         if self.args.debug:
@@ -154,7 +154,7 @@ class Launcher:  # pragma: no cover
                 self.final_launch_mode = default_mode_from_env or "headless"
                 return
 
-            logger.info("--- Select Launch Mode (Not specified via CLI) ---")
+            logger.info("--- 选择启动模式 (未通过命令行指定) ---")
             if env_launch_mode and default_mode_from_env:
                 logger.info(
                     f"  Default mode from .env: {env_launch_mode} -> {default_mode_from_env}"
@@ -183,7 +183,7 @@ class Launcher:  # pragma: no cover
             else:
                 self.final_launch_mode = default_mode_from_env or "headless"
                 logger.info(
-                    f"Invalid input '{user_mode_choice}', using default: {self.final_launch_mode}"
+                    f"无效输入 \'{user_mode_choice}\'，使用默认值: {self.final_launch_mode}"
                 )
         logger.debug(f"Selected launch mode: {self.final_launch_mode}")
 
@@ -216,7 +216,7 @@ class Launcher:  # pragma: no cover
                     self.args.auto_save_auth = True
                     self.args.auto_save_auth_from_cli = True
                     self.args.save_auth_as = new_auth_filename
-                    logger.info(f"Auth will be saved as: {new_auth_filename}.json")
+                    logger.info(f"认证信息将保存为: {new_auth_filename}.json")
                     if self.effective_active_auth_json_path:
                         self.effective_active_auth_json_path = None
             else:
@@ -233,11 +233,11 @@ class Launcher:  # pragma: no cover
 
     def _check_server_port(self):
         server_target_port = self.args.server_port
-        logger.info(f"--- Step 2: Checking if port {server_target_port} is in use ---")
+        logger.info(f"--- 第 2 步：正在检查端口 {server_target_port} 是否被占用 ---")
         port_is_available = False
         uvicorn_bind_host = "0.0.0.0"
         if is_port_in_use(server_target_port, host=uvicorn_bind_host):
-            logger.warning(f"Port {server_target_port} is currently in use.")
+            logger.warning(f"端口 {server_target_port} 当前已被占用。")
             pids_on_port = find_pids_on_port(server_target_port)
             if pids_on_port:
                 logger.warning(f"PIDs using port {server_target_port}: {pids_on_port}")
@@ -256,7 +256,7 @@ class Launcher:  # pragma: no cover
                         if not is_port_in_use(
                             server_target_port, host=uvicorn_bind_host
                         ):
-                            logger.info("Port is now available.")
+                            logger.info("端口现在可用。")
                             port_is_available = True
                         else:
                             logger.error("Port still in use after kill attempt.")
@@ -290,7 +290,7 @@ class Launcher:  # pragma: no cover
                                 break
 
             if self.effective_active_auth_json_path:
-                logger.info(f"Using auth file: {self.effective_active_auth_json_path}")
+                logger.info(f"正在使用认证文件: {self.effective_active_auth_json_path}")
             else:
                 logger.error(f"Auth file '{self.args.active_auth_json}' not found.")
                 sys.exit(1)
@@ -437,7 +437,7 @@ class Launcher:  # pragma: no cover
 
     def _start_server(self):
         logger.info(
-            f"--- Step 5: Starting integrated FastAPI server on port {self.args.server_port} ---"
+            f"--- 第 5 步：正在端口 {self.args.server_port} 上启动集成 FastAPI 服务器 ---"
         )
         if app is None:
             logger.error("FastAPI app not found.")
@@ -466,7 +466,7 @@ class Launcher:  # pragma: no cover
                         new_files = set(os.listdir(SAVED_AUTH_DIR)) - initial_files
                         if new_files:
                             logger.info(
-                                f"New auth file detected: {', '.join(new_files)}. Shutting down in 3s..."
+                                f"检测到新的认证文件。将在 3 秒内关闭..."
                             )
                             time.sleep(3)
                             server.should_exit = True

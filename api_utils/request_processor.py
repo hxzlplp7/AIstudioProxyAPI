@@ -703,10 +703,10 @@ async def process_request_with_retry(
             )
         except QuotaExceededRetry:
             logger.warning(
-                f"[{req_id}] Quota wall hit (attempt {attempt}/{max_retries}). Waiting for rotation..."
+                f"[{req_id}] 触碰配额墙 (尝试 {attempt}/{max_retries})。正在等待轮换..."
             )
             await GlobalState.rotation_complete_event.wait()
-            logger.info(f"[{req_id}] Rotation complete. Retrying request.")
+            logger.info(f"[{req_id}] 轮换完成。正在重试请求。")
             continue
     logger.error(f"[{req_id}] Request failed after {max_retries} retries due to quota.")
     raise Exception(f"Request failed after {max_retries} retries due to quota issues.")
@@ -737,13 +737,13 @@ async def _process_request_refactored(
 
     # 0. Check Auth Rotation Lock
     if not GlobalState.AUTH_ROTATION_LOCK.is_set():
-        logger.info(f"[{req_id}] Request held: Waiting for auth rotation...")
+        logger.info(f"[{req_id}] 请求挂起：等待认证轮换...")
         await GlobalState.AUTH_ROTATION_LOCK.wait()
-        logger.info(f"[{req_id}] ▶️ Resuming after Auth Rotation.")
+        logger.info(f"[{req_id}] ▶️ 认证轮换后恢复。")
 
     # [GR-03] Pre-Flight Graceful Rotation Check
     if GlobalState.NEEDS_ROTATION:
-        logger.info(f"[{req_id}] 🔄 Graceful Rotation Pending. Initiating rotation...")
+        logger.info(f"[{req_id}] 🔄 准备平滑轮换。正在初始化轮换...")
         from api_utils.server_state import state
 
         current_model_id = state.current_ai_studio_model_id
@@ -751,7 +751,7 @@ async def _process_request_refactored(
 
         if await perform_auth_rotation(target_model_id=current_model_id):
             GlobalState.NEEDS_ROTATION = False
-            logger.info(f"[{req_id}] ✅ Pre-flight rotation complete.")
+            logger.info(f"[{req_id}] ✅ 预检轮换完成。")
 
     is_connected = await _test_client_connection(req_id, http_request)
     if not is_connected:

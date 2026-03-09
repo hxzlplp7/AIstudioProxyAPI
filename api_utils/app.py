@@ -277,7 +277,7 @@ async def lifespan(app: FastAPI):
 
     state.is_initializing = True
     startup_start_time = time.time()
-    logger.info("Starting AI Studio Proxy Server...")
+    logger.info("正在启动 AI Studio 代理服务器...")
 
     try:
         await _start_stream_proxy()
@@ -286,11 +286,11 @@ async def lifespan(app: FastAPI):
         launch_mode = get_environment_variable("LAUNCH_MODE", "unknown")
         if state.is_page_ready or launch_mode == "direct_debug_no_browser":
             state.worker_task = asyncio.create_task(queue_worker())
-            logger.info("Request processing worker started.")
+            logger.info("请求处理工作线程已启动。")
         else:
             raise RuntimeError("Failed to initialize browser/page, worker not started.")
 
-        logger.info("[WATCHDOG] Starting Quota Watchdog Task...")
+        logger.info("[看门狗] 正在启动配额监视任务...")
         watchdog_func = state.quota_watchdog
         if watchdog_func:
             app.state.watchdog_task = asyncio.create_task(watchdog_func())
@@ -310,7 +310,7 @@ async def lifespan(app: FastAPI):
             logger.warning(f"[COOKIE-REFRESH] Failed to start periodic refresh: {e}")
 
         startup_duration = time.time() - startup_start_time
-        logger.info(f"Server startup complete. (Took: {startup_duration:.2f}s)")
+        logger.info(f"服务器启动完成。(耗时: {startup_duration:.2f}秒)")
         state.is_initializing = False
         yield
     except Exception as e:
@@ -318,7 +318,7 @@ async def lifespan(app: FastAPI):
         await _shutdown_resources()
         raise RuntimeError(f"Application startup failed: {e}") from e
     finally:
-        logger.info("Shutting down server...")
+        logger.info("正在关闭服务器...")
 
         # Stop periodic cookie refresh and save cookies before shutdown
         if hasattr(app.state, "cookie_refresh_task"):
@@ -352,7 +352,7 @@ async def lifespan(app: FastAPI):
         finally:
             restore_original_streams(initial_stdout, initial_stderr)
             restore_original_streams(*original_streams)
-            logger.info("Server shut down.")
+            logger.info("服务器已关闭。")
 
 
 class APIKeyAuthMiddleware(BaseHTTPMiddleware):

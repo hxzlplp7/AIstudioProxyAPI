@@ -123,7 +123,7 @@ class PageController(
 
     async def clear_chat_history(self, check_client_disconnected: Callable):
         """Clear chat history and invalidate function calling cache."""
-        self.logger.info(f"[{self.req_id}] Clearing chat history...")
+        self.logger.info(f"[{self.req_id}] 正在清除聊天历史...")
 
         # Invalidate FC cache since we're starting a new chat
         self.invalidate_fc_cache("new_chat")

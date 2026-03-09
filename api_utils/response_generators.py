@@ -120,7 +120,7 @@ async def resilient_stream_generator(
     finally:
         if not completion_event.is_set():
             completion_event.set()
-            logger.info(f"[{req_id}] Resilient stream completion event set")
+            logger.info(f"[{req_id}] 弹性流完成事件已设置")
 
 
 async def gen_sse_from_aux_stream(
@@ -166,7 +166,7 @@ async def gen_sse_from_aux_stream(
                 GlobalState.CURRENT_STREAM_REQ_ID
                 and GlobalState.CURRENT_STREAM_REQ_ID != req_id
             ):
-                logger.warning(f"[{req_id}] 🧟 Zombie Stream Detected! Terminating.")
+                logger.warning(f"[{req_id}] 🧟 检测到僵尸流！正在终止。")
                 break
 
             if GlobalState.QUOTA_EXCEEDED_EVENT.is_set():
@@ -174,14 +174,14 @@ async def gen_sse_from_aux_stream(
 
             if is_response_finalized:
                 logger.warning(
-                    f"[{req_id}] ⚠️ Extraneous message received after response finalization. Ignoring."
+                    f"[{req_id}] ⚠️ 响应完成后收到多余消息。正在忽略。"
                 )
                 continue
 
             # Holding Pattern for Recovery
             if GlobalState.IS_RECOVERING:
                 logger.info(
-                    f"[{req_id}] ⏸️ System in Recovery Mode. Holding stream open..."
+                    f"[{req_id}] ⏸️ 系统处于恢复模式。保持流开启..."
                 )
                 recovery_wait_start = time.time()
                 while GlobalState.IS_RECOVERING:
@@ -199,7 +199,7 @@ async def gen_sse_from_aux_stream(
 
                 if GlobalState.IS_RECOVERING:
                     break
-                logger.info(f"[{req_id}] ▶️ Recovery Complete. Resuming stream.")
+                logger.info(f"[{req_id}] ▶️ 恢复完成。正在恢复流。")
 
             if GlobalState.IS_QUOTA_EXCEEDED and not GlobalState.IS_RECOVERING:
                 logger.warning(
